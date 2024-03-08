@@ -22,6 +22,6 @@ example = weekly_data[(weekly_data["company_id"] == 248552) & (
 example = example[["week", "year", "amount"]]
 example.index = example["week"].astype(str) + example["year"].astype(str)
 example = example.drop(columns=["week", "year"])
-
+example.reset_index().drop(columns=["index"])
 plt.plot(example)
 plt.show()
