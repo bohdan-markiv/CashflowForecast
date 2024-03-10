@@ -1,27 +1,43 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 
-data = pd.read_csv("grouped_data.csv")
 
-data = data[data["effective_date"] <= '2023-12-31']
+def anonymyse_ids(df, name):
+    df[name] = (df[name] * 2) + 1810
+    return df
 
-grouped = data.groupby(["company_id", "Classification"])[
-    "amount"].agg(["mean", "count", "std"]).reset_index()
 
-# Cretae weekly data
-data['effective_date'] = pd.to_datetime(data['effective_date'])
-data["week"] = data["effective_date"].dt.isocalendar().week
-data["year"] = data["effective_date"].dt.isocalendar().year
+def data_prep(weekly=False):
 
-weekly_data = data.groupby(["company_id", "Classification", "week", "year"])[
-    "amount"].sum().reset_index()
+    if weekly:
+        threshold = 35
+    else:
+        threshold = 50
 
-example = weekly_data[(weekly_data["company_id"] == 248552) & (
-    weekly_data["Classification"] == "Operational Revenue")]
+    output_list = {}
 
-example = example[["week", "year", "amount"]]
-example.index = example["week"].astype(str) + example["year"].astype(str)
-example = example.drop(columns=["week", "year"])
-example.reset_index().drop(columns=["index"])
-plt.plot(example)
-plt.show()
+    data = anonymyse_ids(pd.read_csv("data/grouped_data.csv"), "company_id")
+
+    data = data[data["effective_date"] <= '2023-12-31']
+
+    # Cretae weekly data
+    data['effective_date'] = pd.to_datetime(data['effective_date'])
+    data["week"] = data["effective_date"].dt.isocalendar().week
+    data["year"] = data["effective_date"].dt.isocalendar().year
+
+    weekly_data = data.groupby(["company_id", "Classification", "week", "year"])[
+        "amount"].sum().reset_index()
+
+    for company in set(weekly_data["company_id"]):
+        output_list[company] = {}
+        for type in {'COGS', 'Other Operating Costs', 'Other Revenue', 'Organizational Costs', 'Operational Revenue'}:
+
+            cut = weekly_data[(weekly_data["company_id"] == company) &
+                              (weekly_data["Classification"] == type)]
+
+            if len(cut) > threshold:
+                output_list[company][type] = cut
+            else:
+                output_list[company][type] = None
+
+    return output_list
