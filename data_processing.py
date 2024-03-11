@@ -41,6 +41,6 @@ def data_prep(weekly=False):
             if len(cut) > threshold:
                 output_list[company][type] = cut
             else:
-                output_list[company][type] = None
+                output_list[company][type] = False
 
     return output_list

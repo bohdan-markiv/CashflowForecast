@@ -1,5 +1,6 @@
 import pandas as pd
 import warnings
+import os
 from matplotlib import pyplot
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -88,7 +89,13 @@ class custom_ARIMA:
                         self.test_predictions, color='red', linestyle='--', label='Test Predictions')
             pyplot.legend()
             if save:
-                pyplot.savefig(f"graphs/{self.name}-{self.type}")
+                MYDIR = (f"graphs/{self.name}")
+                CHECK_FOLDER = os.path.isdir(MYDIR)
+
+                # If folder doesn't exist, then create it.
+                if not CHECK_FOLDER:
+                    os.makedirs(MYDIR)
+                pyplot.savefig(f"graphs/{self.name}/{self.type}")
             else:
                 pyplot.show()
 
@@ -102,6 +109,39 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
+for company in data.keys():
+    for type, df in data[company].items():
+        if not isinstance(df, bool):
+            try:
+                # Check if 'week', 'year', and 'amount' are in the columns
+                if all(col in df.columns for col in ['week', 'year', 'amount']):
+                    df = df[["week", "year", "amount"]]
+                    df = df.sort_values(['year', 'week'], ascending=[
+                        True, True]).reset_index(drop=True)
+                    df = df.drop(columns=["week", "year"])
+                else:
+                    raise KeyError(
+                        "One of 'week', 'year', 'amount' is not in DataFrame")
+            except KeyError as e:  # Catching if columns are missing
+                print(f"Missing columns for weekly data processing: {e}")
+                try:
+                    # Attempt processing assuming the structure is for 'effective_date'
+                    if "effective_date" in df.columns and "amount" in df.columns:
+                        df = df[["effective_date", "amount"]]
+                        # Ensure index is datetime for time series
+                        df.index = pd.to_datetime(df["effective_date"])
+                        df = df.drop(columns=["effective_date"])
+                    else:
+                        raise KeyError(
+                            "One of 'effective_date', 'amount' is not in DataFrame")
+                except KeyError as error:
+                    print(
+                        f"Missing columns for daily data processing: {error}")
+            my_arima = custom_ARIMA(3, 2, 4, df, company, type)
+
+            my_arima.initialize_model()
+            my_arima.create_the_full_graph(save=True)
+
 data = data[54468226]["Operational Revenue"]
 try:
     # Check if 'week', 'year', and 'amount' are in the columns
