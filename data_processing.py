@@ -25,8 +25,11 @@ def data_prep(weekly=False):
     data["week"] = data["effective_date"].dt.isocalendar().week
     data["year"] = data["effective_date"].dt.isocalendar().year
 
-    weekly_data = data.groupby(["company_id", "Classification", "week", "year"])[
-        "amount"].sum().reset_index()
+    if weekly:
+        weekly_data = data.groupby(["company_id", "Classification", "week", "year"])[
+            "amount"].sum().reset_index()
+    else:
+        weekly_data = data
 
     for company in set(weekly_data["company_id"]):
         output_list[company] = {}
@@ -38,6 +41,6 @@ def data_prep(weekly=False):
             if len(cut) > threshold:
                 output_list[company][type] = cut
             else:
-                output_list[company][type] = None
+                output_list[company][type] = False
 
     return output_list
