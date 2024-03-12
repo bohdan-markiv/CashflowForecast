@@ -24,6 +24,7 @@ class custom_RandomForest:
         self.n_estimators = n_estimators
         self.name = name
         self.type = type
+        self.save = save
 
     def _series_to_supervised(self, data, n_out=1, dropnan=True):
         n_vars = 1 if type(data) is list else data.shape[1]
@@ -98,9 +99,9 @@ class custom_RandomForest:
         size = int(len(self.values) * 0.7)
         train_data, test_data = self.values[0:
                                             size], self.values[size-6:len(self.values)]
-        test = self._series_to_supervised(test_data, n_in=6)
+        test = self._series_to_supervised(test_data)
         # full data
-        train = self._series_to_supervised(train_data, n_in=6)
+        train = self._series_to_supervised(train_data)
         # split into input and output columns
         testX, testy = test[:, :-1], test[:, -1]
         trainX, trainy = train[:, :-1], train[:, -1]
@@ -109,7 +110,7 @@ class custom_RandomForest:
         model.fit(trainX, trainy)
         # construct an input for a new prediction
         row = self.values[-6:].flatten()
-        actual_raw = self._series_to_supervised(self.values, n_in=6)[:, -1]
+        actual_raw = self._series_to_supervised(self.values)[:, -1]
         # Actual values for the training period
         self.actual = self.df.values[-len(actual_raw):]
         self.predictions_train = []  # To store predictions
@@ -122,7 +123,6 @@ class custom_RandomForest:
             yhat = model.predict(row)
             # Store the prediction
             self.predictions_train.append(yhat[0])
-            print(i)
 
         self.predictions_test = []  # To store predictions
 
@@ -134,7 +134,6 @@ class custom_RandomForest:
             yhat = model.predict(row)
             # Store the prediction
             self.predictions_test.append(yhat[0])
-            print(i)
 
         # Convert predictions list to an array for easier handling
         self.predictions_train = asarray(self.predictions_train)
@@ -189,10 +188,14 @@ output_table_mae = pd.DataFrame({
 })
 
 
-def create_random_forests(data, n_estimators):
+def create_random_forests(data, n_estimators, n_lags):
+    i = 0
     for company in data.keys():
+
         for type, df in data[company].items():
             if not isinstance(df, bool):
+                print(i)
+                i += 1
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns
                     if all(col in df.columns for col in ['week', 'year', 'amount']):
@@ -218,7 +221,7 @@ def create_random_forests(data, n_estimators):
                     except KeyError as error:
                         print(
                             f"Missing columns for daily data processing: {error}")
-                my_random_forest = custom_RandomForest(df, company, type, n_lags=6,
+                my_random_forest = custom_RandomForest(df, company, type, n_lags=n_lags,
                                                        n_estimators=n_estimators, save=True)
 
                 my_random_forest.initialize_model()
@@ -250,7 +253,7 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
-create_random_forests(data, 2000)
+create_random_forests(data, 2000, 6)
 
 
 weekly = True
