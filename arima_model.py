@@ -123,9 +123,12 @@ output_table_mae = pd.DataFrame({
 
 
 def create_graphs_rsme_table(data, p, d, q):
+    i = 0
     for company in data.keys():
         for type, df in data[company].items():
             if not isinstance(df, bool):
+                print(i)
+                i += 1
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns
                     if all(col in df.columns for col in ['week', 'year', 'amount']):
