@@ -6,7 +6,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.arima.model import ARIMA
 from math import sqrt
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from data_processing import data_prep
 warnings.filterwarnings(
     "ignore", message="Maximum Likelihood optimization failed to converge.*")
@@ -45,7 +45,7 @@ class custom_ARIMA:
         self.test_predictions = []
 
         for t in range(len(self.train)):
-            model = ARIMA(history_train, order=(1, 2, 1))
+            model = ARIMA(history_train, order=(self.p, self.d, self.q))
             model_fit = model.fit()
             output = model_fit.forecast()
             yhat = output[0]
@@ -55,7 +55,7 @@ class custom_ARIMA:
 
         # Add history of the entire training data for predicting the test
         for t in range(len(self.test)):
-            model = ARIMA(history_test, order=(1, 2, 1))
+            model = ARIMA(history_test, order=(self.p, self.d, self.q))
             model_fit = model.fit()
             output = model_fit.forecast()
             yhat = output[0]
@@ -63,22 +63,21 @@ class custom_ARIMA:
             obs = self.test[t]
             history_test.append(obs)
 
+        self.mse = mean_squared_error(
+            self.test, self.test_predictions)
+        self.rmse = sqrt(self.mse)
+        self.mae = mean_absolute_error(self.test, self.test_predictions)
+
     def get_rmse(self):
         if isinstance(self.test, str):
             print("Do the initialisation first.")
         else:
-            test_rmse = sqrt(mean_squared_error(
-                self.test, self.test_predictions))
-            print('Test RMSE: %.3f' % test_rmse)
+            print('Test RMSE: %.3f' % self.rmse)
 
     def create_the_full_graph(self, save=False):
 
         if isinstance(self.test, str):
             print("Do the initialisation first.")
-            if save:
-                pyplot.savefig("graphs")
-            else:
-                pyplot.show()
 
         else:
             pyplot.figure(figsize=[15, 5])
@@ -100,6 +99,79 @@ class custom_ARIMA:
                 pyplot.show()
 
 
+output_table_rmse = pd.DataFrame({
+    'COGS': [],
+    'Operational Revenue': [],
+    'Other Revenue': [],
+    'Other Operating Costs': [],
+    'Organizational Costs': []
+})
+output_table_mse = pd.DataFrame({
+    'COGS': [],
+    'Operational Revenue': [],
+    'Other Revenue': [],
+    'Other Operating Costs': [],
+    'Organizational Costs': []
+})
+output_table_mae = pd.DataFrame({
+    'COGS': [],
+    'Operational Revenue': [],
+    'Other Revenue': [],
+    'Other Operating Costs': [],
+    'Organizational Costs': []
+})
+
+
+def create_graphs_rsme_table(data, p, d, q):
+    for company in data.keys():
+        for type, df in data[company].items():
+            if not isinstance(df, bool):
+                try:
+                    # Check if 'week', 'year', and 'amount' are in the columns
+                    if all(col in df.columns for col in ['week', 'year', 'amount']):
+                        df = df[["week", "year", "amount"]]
+                        df = df.sort_values(['year', 'week'], ascending=[
+                            True, True]).reset_index(drop=True)
+                        df = df.drop(columns=["week", "year"])
+                    else:
+                        raise KeyError(
+                            "One of 'week', 'year', 'amount' is not in DataFrame")
+                except KeyError as e:  # Catching if columns are missing
+                    print(f"Missing columns for weekly data processing: {e}")
+                    try:
+                        # Attempt processing assuming the structure is for 'effective_date'
+                        if "effective_date" in df.columns and "amount" in df.columns:
+                            df = df[["effective_date", "amount"]]
+                            # Ensure index is datetime for time series
+                            df.index = pd.to_datetime(df["effective_date"])
+                            df = df.drop(columns=["effective_date"])
+                        else:
+                            raise KeyError(
+                                "One of 'effective_date', 'amount' is not in DataFrame")
+                    except KeyError as error:
+                        print(
+                            f"Missing columns for daily data processing: {error}")
+                my_arima = custom_ARIMA(p, d, q, df, company, type)
+
+                my_arima.initialize_model()
+                my_arima.create_the_full_graph(save=True)
+                if company in output_table_rmse.index:
+                    output_table_rmse.at[company, type] = my_arima.rmse
+                else:
+                    output_table_rmse.loc[company, type] = my_arima.rmse
+                if company in output_table_mse.index:
+                    output_table_mse.at[company, type] = my_arima.mse
+                else:
+                    output_table_mse.loc[company, type] = my_arima.mse
+                if company in output_table_mae.index:
+                    output_table_mae.at[company, type] = my_arima.mae
+                else:
+                    output_table_mae.loc[company, type] = my_arima.mae
+    output_table_rmse.to_excel("output_tables/rmse_arima.xlsx")
+    output_table_mse.to_excel("output_tables/mse_arima.xlsx")
+    output_table_mae.to_excel("output_tables/mae_arima.xlsx")
+
+
 weekly = True
 data = data_prep(weekly=weekly)
 
@@ -109,38 +181,7 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
-for company in data.keys():
-    for type, df in data[company].items():
-        if not isinstance(df, bool):
-            try:
-                # Check if 'week', 'year', and 'amount' are in the columns
-                if all(col in df.columns for col in ['week', 'year', 'amount']):
-                    df = df[["week", "year", "amount"]]
-                    df = df.sort_values(['year', 'week'], ascending=[
-                        True, True]).reset_index(drop=True)
-                    df = df.drop(columns=["week", "year"])
-                else:
-                    raise KeyError(
-                        "One of 'week', 'year', 'amount' is not in DataFrame")
-            except KeyError as e:  # Catching if columns are missing
-                print(f"Missing columns for weekly data processing: {e}")
-                try:
-                    # Attempt processing assuming the structure is for 'effective_date'
-                    if "effective_date" in df.columns and "amount" in df.columns:
-                        df = df[["effective_date", "amount"]]
-                        # Ensure index is datetime for time series
-                        df.index = pd.to_datetime(df["effective_date"])
-                        df = df.drop(columns=["effective_date"])
-                    else:
-                        raise KeyError(
-                            "One of 'effective_date', 'amount' is not in DataFrame")
-                except KeyError as error:
-                    print(
-                        f"Missing columns for daily data processing: {error}")
-            my_arima = custom_ARIMA(3, 2, 4, df, company, type)
-
-            my_arima.initialize_model()
-            my_arima.create_the_full_graph(save=True)
+create_graphs_rsme_table(data, 3, 2, 4)
 
 data = data[54468226]["Operational Revenue"]
 try:
