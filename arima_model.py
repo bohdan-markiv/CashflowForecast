@@ -94,7 +94,7 @@ class custom_ARIMA:
                 # If folder doesn't exist, then create it.
                 if not CHECK_FOLDER:
                     os.makedirs(MYDIR)
-                pyplot.savefig(f"graphs/{self.name}/{self.type}")
+                pyplot.savefig(f"graphs/arima/{self.name}/{self.type}")
             else:
                 pyplot.show()
 
@@ -167,9 +167,9 @@ def create_graphs_rsme_table(data, p, d, q):
                     output_table_mae.at[company, type] = my_arima.mae
                 else:
                     output_table_mae.loc[company, type] = my_arima.mae
-    output_table_rmse.to_excel("output_tables/rmse_arima.xlsx")
-    output_table_mse.to_excel("output_tables/mse_arima.xlsx")
-    output_table_mae.to_excel("output_tables/mae_arima.xlsx")
+    output_table_rmse.to_excel("output_tables/arima/rmse.xlsx")
+    output_table_mse.to_excel("output_tables/arima/mse.xlsx")
+    output_table_mae.to_excel("output_tables/arima/mae.xlsx")
 
 
 weekly = True
