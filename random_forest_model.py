@@ -190,12 +190,12 @@ output_table_mae = pd.DataFrame({
 
 
 def create_random_forests(data, n_estimators, n_lags):
-    i = 0
+    i = 1
     for company in data.keys():
 
         for type, df in data[company].items():
             if not isinstance(df, bool):
-                print(i)
+                print(f"Current Random Forest progress - {i}")
                 i += 1
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns

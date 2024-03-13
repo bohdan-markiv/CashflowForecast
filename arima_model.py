@@ -88,7 +88,7 @@ class custom_ARIMA:
                         self.test_predictions, color='red', linestyle='--', label='Test Predictions')
             pyplot.legend()
             if save:
-                MYDIR = (f"graphs/{self.name}")
+                MYDIR = (f"graphs/arima/{self.name}")
                 CHECK_FOLDER = os.path.isdir(MYDIR)
 
                 # If folder doesn't exist, then create it.
@@ -122,12 +122,12 @@ output_table_mae = pd.DataFrame({
 })
 
 
-def create_graphs_rsme_table(data, p, d, q):
-    i = 0
+def create_arimas(data, p, d, q):
+    i = 1
     for company in data.keys():
         for type, df in data[company].items():
             if not isinstance(df, bool):
-                print(i)
+                print(f"Current Arima progress - {i}")
                 i += 1
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns
@@ -184,7 +184,7 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
-create_graphs_rsme_table(data, 3, 2, 4)
+create_arimas(data, 3, 2, 4)
 
 data = data[54468226]["Operational Revenue"]
 try:

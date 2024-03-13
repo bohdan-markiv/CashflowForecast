@@ -116,12 +116,12 @@ output_table_mae = pd.DataFrame({
 
 
 def create_lstms(data, epochs, batch_size, look_back):
-    i = 0
+    i = 1
     for company in data.keys():
         for type, df in data[company].items():
             if not isinstance(df, bool):
                 print(i)
-                i += 1
+                print(f"Current LSTM progress - {i}")
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns
                     if all(col in df.columns for col in ['week', 'year', 'amount']):
