@@ -98,7 +98,7 @@ class custom_RandomForest:
 
         size = int(len(self.values) * 0.7)
         train_data, test_data = self.values[0:
-                                            size], self.values[size-6:len(self.values)]
+                                            size], self.values[size-self.n_lags:len(self.values)]
         test = self._series_to_supervised(test_data)
         # full data
         train = self._series_to_supervised(train_data)
@@ -106,7 +106,7 @@ class custom_RandomForest:
         testX, testy = test[:, :-1], test[:, -1]
         trainX, trainy = train[:, :-1], train[:, -1]
         # fit model
-        model = RandomForestRegressor(n_estimators=2000)
+        model = RandomForestRegressor(n_estimators=self.n_estimators)
         model.fit(trainX, trainy)
         # construct an input for a new prediction
         row = self.values[-6:].flatten()
@@ -254,7 +254,7 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
-create_random_forests(data, 2000, 6)
+create_random_forests(data, 3000, 10)
 
 
 weekly = True
@@ -284,4 +284,76 @@ except KeyError as e:  # Catching if columns are missing
     except KeyError as error:
         print(f"Missing columns for daily data processing: {error}")
 df.plot()
+plt.show()
+
+
+def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
+    n_vars = 1 if type(data) is list else data.shape[1]
+    df = DataFrame(data)
+    cols = list()
+    # input sequence (t-n, ... t-1)
+    for i in range(n_in, 0, -1):
+        cols.append(df.shift(i))
+    # forecast sequence (t, t+1, ... t+n)
+    for i in range(0, n_out):
+        cols.append(df.shift(-i))
+    # put it all together
+    agg = concat(cols, axis=1)
+    # drop rows with NaN values
+    if dropnan:
+        agg.dropna(inplace=True)
+    return agg.values
+
+
+def train_test_split(data, n_test):
+    return data[:-n_test, :], data[-n_test:, :]
+
+
+def walk_forward_validation(data, n_test):
+    predictions = list()
+    # split dataset
+    train, test = train_test_split(data, n_test)
+    # seed history with training dataset
+    history = [x for x in train]
+    # step over each time-step in the test set
+    for i in range(len(test)):
+        # split test row into input and output columns
+        testX, testy = test[i, :-1], test[i, -1]
+    # fit model on history and make a prediction
+        yhat = random_forest_forecast(history, testX)
+    # store forecast in list of predictions
+        predictions.append(yhat)
+    # add actual observation to history for the next loop
+        history.append(test[i])
+    # summarize progress
+        print('>expected=%.1f, predicted=%.1f' % (testy, yhat))
+    # estimate prediction error
+    error = mean_absolute_error(test[:, -1], predictions)
+    return error, test[:, 1], predictions
+
+
+def random_forest_forecast(train, testX):
+    # transform list into array
+    train = asarray(train)
+    # split into input and output columns
+    trainX, trainy = train[:, :-1], train[:, -1]
+    # fit model
+    model = RandomForestRegressor(n_estimators=3000)
+    model.fit(trainX, trainy)
+    # make a one-step prediction
+    yhat = model.predict([testX])
+    return yhat[0]
+
+
+# training
+values = df.values
+# transform the time series data into supervised learning
+data = series_to_supervised(values, n_in=7)
+# evaluate
+mae, y, yhat = walk_forward_validation(data, 30)
+print('MAE: %.3f' % mae)
+# plot expected vs predicted
+plt.plot(y, label='Expected')
+plt.plot(yhat, label='Predicted')
+plt.legend()
 plt.show()
