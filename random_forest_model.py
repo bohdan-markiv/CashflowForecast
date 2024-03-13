@@ -161,6 +161,7 @@ class custom_RandomForest:
             if not CHECK_FOLDER:
                 os.makedirs(MYDIR)
             plt.savefig(f"graphs/random_forest/{self.name}/{self.type}")
+            plt.close()
         else:
             plt.show()
 
@@ -241,7 +242,7 @@ def create_random_forests(data, n_estimators, n_lags):
                     output_table_mae.loc[company, type] = my_random_forest.mae
     output_table_rmse.to_excel("output_tables/random_forest/rmse.xlsx")
     output_table_mse.to_excel("output_tables/random_forest/mse.xlsx")
-    output_table_mae.to_excel("output_tables/random_forest/.xlsx")
+    output_table_mae.to_excel("output_tables/random_forest/mae.xlsx")
 
 
 weekly = True
