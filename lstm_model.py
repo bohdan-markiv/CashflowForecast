@@ -50,7 +50,7 @@ class custom_LSTM():
         model.add(Dense(1))
         model.compile(loss='mean_squared_error', optimizer='adam')
         model.fit(trainX, trainY, epochs=self.epochs,
-                  batch_size=self.batch_size, verbose=1)
+                  batch_size=self.batch_size, verbose=0)
 
         self.trainPredict = model.predict(trainX)
         self.testPredict = model.predict(testX)
