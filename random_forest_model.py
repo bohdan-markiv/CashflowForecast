@@ -166,30 +166,28 @@ class custom_RandomForest:
             plt.show()
 
 
-output_table_rmse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mae = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-
-
 def create_random_forests(data, n_estimators, n_lags):
+    output_table_rmse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mae = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
     i = 1
     for company in data.keys():
 
@@ -245,16 +243,16 @@ def create_random_forests(data, n_estimators, n_lags):
     output_table_mae.to_excel("output_tables/random_forest/mae.xlsx")
 
 
+"""
 weekly = True
 data = data_prep(weekly=weekly)
 
-"""
 role = sagemaker.get_execution_role()
 bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
-"""
-create_random_forests(data, 3000, 10)
+
+# create_random_forests(data, 3000, 10)
 
 
 weekly = True
@@ -357,3 +355,4 @@ plt.plot(y, label='Expected')
 plt.plot(yhat, label='Predicted')
 plt.legend()
 plt.show()
+"""

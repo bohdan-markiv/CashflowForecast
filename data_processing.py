@@ -10,7 +10,7 @@ def anonymyse_ids(df, name):
 def data_prep(weekly=False):
 
     if weekly:
-        threshold = 35
+        threshold = 40
     else:
         threshold = 50
 

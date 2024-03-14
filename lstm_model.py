@@ -92,30 +92,29 @@ class custom_LSTM():
             plt.show()
 
 
-output_table_rmse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mae = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-
-
 def create_lstms(data, epochs, batch_size, look_back):
+    output_table_rmse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mae = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+
     i = 1
     for company in data.keys():
         for type, df in data[company].items():
@@ -170,11 +169,10 @@ def create_lstms(data, epochs, batch_size, look_back):
     output_table_mae.to_excel("output_tables/lstm/mae.xlsx")
 
 
+# create_lstms(df, 1200, 7, 4)
+"""
 weekly = True
 df = data_prep(weekly=weekly)
-create_lstms(df, 1200, 7, 4)
-
-"""
 # One model instance
 df = df[54468226]["Operational Revenue"]
 try:

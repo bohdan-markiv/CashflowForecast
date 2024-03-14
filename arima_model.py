@@ -43,25 +43,29 @@ class custom_ARIMA:
         history_test = [x for x in self.train]
         self.train_predictions = []
         self.test_predictions = []
+        try:
+            for t in range(len(self.train)):
+                model = ARIMA(history_train, order=(self.p, self.d, self.q))
+                model_fit = model.fit()
+                output = model_fit.forecast()
+                yhat = output[0]
+                self.train_predictions.append(yhat)
+                obs = self.train[t]
+                history_train.append(obs)  # only train data used here
 
-        for t in range(len(self.train)):
-            model = ARIMA(history_train, order=(self.p, self.d, self.q))
-            model_fit = model.fit()
-            output = model_fit.forecast()
-            yhat = output[0]
-            self.train_predictions.append(yhat)
-            obs = self.train[t]
-            history_train.append(obs)  # only train data used here
-
-        # Add history of the entire training data for predicting the test
-        for t in range(len(self.test)):
-            model = ARIMA(history_test, order=(self.p, self.d, self.q))
-            model_fit = model.fit()
-            output = model_fit.forecast()
-            yhat = output[0]
-            self.test_predictions.append(yhat)
-            obs = self.test[t]
-            history_test.append(obs)
+            # Add history of the entire training data for predicting the test
+            for t in range(len(self.test)):
+                model = ARIMA(history_test, order=(self.p, self.d, self.q))
+                model_fit = model.fit()
+                output = model_fit.forecast()
+                yhat = output[0]
+                self.test_predictions.append(yhat)
+                obs = self.test[t]
+                history_test.append(obs)
+        except Exception as e:
+            print(
+                f"for this company operation was not successfull - {self.name }")
+            raise Exception
 
         self.mse = mean_squared_error(
             self.test, self.test_predictions)
@@ -99,30 +103,28 @@ class custom_ARIMA:
                 pyplot.show()
 
 
-output_table_rmse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mse = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-output_table_mae = pd.DataFrame({
-    'COGS': [],
-    'Operational Revenue': [],
-    'Other Revenue': [],
-    'Other Operating Costs': [],
-    'Organizational Costs': []
-})
-
-
 def create_arimas(data, p, d, q):
+    output_table_rmse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mse = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_mae = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
     i = 1
     for company in data.keys():
         for type, df in data[company].items():
@@ -155,28 +157,28 @@ def create_arimas(data, p, d, q):
                         print(
                             f"Missing columns for daily data processing: {error}")
                 my_arima = custom_ARIMA(p, d, q, df, company, type)
+                try:
+                    my_arima.initialize_model()
+                    my_arima.create_the_full_graph(save=True)
+                    if company in output_table_rmse.index:
+                        output_table_rmse.at[company, type] = my_arima.rmse
+                    else:
+                        output_table_rmse.loc[company, type] = my_arima.rmse
+                    if company in output_table_mse.index:
+                        output_table_mse.at[company, type] = my_arima.mse
+                    else:
+                        output_table_mse.loc[company, type] = my_arima.mse
+                    if company in output_table_mae.index:
+                        output_table_mae.at[company, type] = my_arima.mae
+                    else:
+                        output_table_mae.loc[company, type] = my_arima.mae
+                except Exception:
+                    continue
 
-                my_arima.initialize_model()
-                my_arima.create_the_full_graph(save=True)
-                if company in output_table_rmse.index:
-                    output_table_rmse.at[company, type] = my_arima.rmse
-                else:
-                    output_table_rmse.loc[company, type] = my_arima.rmse
-                if company in output_table_mse.index:
-                    output_table_mse.at[company, type] = my_arima.mse
-                else:
-                    output_table_mse.loc[company, type] = my_arima.mse
-                if company in output_table_mae.index:
-                    output_table_mae.at[company, type] = my_arima.mae
-                else:
-                    output_table_mae.loc[company, type] = my_arima.mae
     output_table_rmse.to_excel("output_tables/arima/rmse.xlsx")
     output_table_mse.to_excel("output_tables/arima/mse.xlsx")
     output_table_mae.to_excel("output_tables/arima/mae.xlsx")
 
-
-weekly = True
-data = data_prep(weekly=weekly)
 
 """
 role = sagemaker.get_execution_role()
@@ -184,8 +186,10 @@ bucket='bohdan-example-data-sagemaker'
 data_key = 'monthly-beer-production-in-austr.csv'
 data_location = 's3://{}/{}'.format(bucket, data_key)
 """
-create_arimas(data, 3, 2, 4)
-
+# create_arimas(data, 3, 2, 4)
+"""
+weekly = True
+data = data_prep(weekly=weekly)
 data = data[54468226]["Operational Revenue"]
 try:
     # Check if 'week', 'year', and 'amount' are in the columns
@@ -240,3 +244,4 @@ my_arima.check_residuals()
 my_arima.initialize_model()
 my_arima.get_rmse()
 my_arima.create_the_full_graph(save=True)
+"""
