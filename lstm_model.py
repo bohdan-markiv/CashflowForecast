@@ -76,9 +76,17 @@ class custom_LSTM():
         testPredictPlot[len(self.trainPredict) +
                         (self.look_back*2)+1:len(self.df)-1, :] = self.testPredict
         # plot baseline and predictions
-        plt.plot(self.scaler.inverse_transform(self.df))
-        plt.plot(trainPredictPlot)
-        plt.plot(testPredictPlot)
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.scaler.inverse_transform(
+            self.df), label='Actual', marker='o')
+        plt.plot(trainPredictPlot,
+                 label='Predicted', marker='x')
+        plt.plot(testPredictPlot, linestyle='--',
+                 label='Test Predictions', marker='x')
+        plt.title('Actual vs Predicted')
+        plt.xlabel('Time')
+        plt.ylabel('Net Cashflow')
+        plt.legend()
         if self.save:
             MYDIR = (f"graphs/lstm/{self.name}")
             CHECK_FOLDER = os.path.isdir(MYDIR)
@@ -119,8 +127,8 @@ def create_lstms(data, epochs, batch_size, look_back):
     for company in data.keys():
         for type, df in data[company].items():
             if not isinstance(df, bool):
-                print(i)
                 print(f"Current LSTM progress - {i}")
+                i += 1
                 try:
                     # Check if 'week', 'year', and 'amount' are in the columns
                     if all(col in df.columns for col in ['week', 'year', 'amount']):
@@ -170,7 +178,7 @@ def create_lstms(data, epochs, batch_size, look_back):
 
 
 # create_lstms(df, 1200, 7, 4)
-
+"""
 weekly = False
 df = data_prep(weekly=weekly)
 # One model instance
@@ -268,3 +276,4 @@ plt.xlabel('Time')
 plt.ylabel('Births')
 plt.legend()
 plt.show()
+"""
