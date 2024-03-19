@@ -170,11 +170,11 @@ def create_lstms(data, epochs, batch_size, look_back):
 
 
 # create_lstms(df, 1200, 7, 4)
-"""
-weekly = True
+
+weekly = False
 df = data_prep(weekly=weekly)
 # One model instance
-df = df[54468226]["Operational Revenue"]
+df = df[17373216]["COGS"]
 try:
     # Check if 'week', 'year', and 'amount' are in the columns
     if all(col in df.columns for col in ['week', 'year', 'amount']):
@@ -220,7 +220,7 @@ def create_dataset(dataset, look_back=1):
     return np.array(dataX), np.array(dataY)
 
 
-look_back = 4
+look_back = 12
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 
@@ -256,8 +256,15 @@ testPredictPlot = np.empty_like(df)
 testPredictPlot[:, :] = np.nan
 testPredictPlot[len(trainPredict)+(look_back*2)+1:len(df)-1, :] = testPredict
 # plot baseline and predictions
+plt.figure(figsize=(12, 6))
 plt.plot(scaler.inverse_transform(df))
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
+plt.plot(scaler.inverse_transform(df),color='blue' label='Actual', marker='o')
+plt.plot(trainPredictPlot,color='green', label='Predicted', marker='x')
+plt.plot(testPredictPlot, color='orange', linestyle='--', label='Test Predictions', marker='x')
+plt.title('Actual vs Predicted')
+plt.xlabel('Time')
+plt.ylabel('Births')
+plt.legend()
 plt.show()
-"""
