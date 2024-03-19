@@ -101,6 +101,7 @@ class custom_ARIMA:
                 pyplot.savefig(f"graphs/arima/{self.name}/{self.type}")
             else:
                 pyplot.show()
+            pyplot.close()
 
 
 def create_arimas(data, p, d, q):
