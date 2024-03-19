@@ -7,7 +7,7 @@ from lstm_model import custom_LSTM, create_lstms
 def sequential_intitializer(data):
     create_arimas(data, 2, 2, 1)
     create_random_forests(data, 3000, 10)
-    create_lstms(data, 1200, 7, 4)
+    create_lstms(data, 1200, 8, 12)
 
 
 if __name__ == '__main__':
