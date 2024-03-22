@@ -149,10 +149,9 @@ class custom_RandomForest:
         plt.plot(self.predictions_train, label='Predicted', marker='x')
         plt.plot(range(len(self.predictions_train), len(self.predictions_train) + len(self.predictions_test)),
                  self.predictions_test, color='red', linestyle='--', label='Test Predictions', marker='x')
-        plt.title('Actual vs Predicted Births')
+        plt.title('Actual vs Predicted')
         plt.xlabel('Time')
-        plt.ylabel('Births')
-        plt.legend()
+        plt.legend("Net Cashflow")
         if self.save:
             MYDIR = (f"graphs/random_forest/{self.name}")
             CHECK_FOLDER = os.path.isdir(MYDIR)
