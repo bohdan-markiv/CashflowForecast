@@ -4,7 +4,7 @@ import pandas as pd
 import tensorflow as tf
 import os
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -46,9 +46,13 @@ class custom_LSTM():
         testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
         model = Sequential()
-        model.add(LSTM(4, input_shape=(1, self.look_back)))
+        model.add(LSTM(units=96, return_sequences=False, activation='relu',
+                       input_shape=(1, self.look_back)))
+
+        model.add(Dense(96, activation='relu'))
+        model.add(Dropout(0))
         model.add(Dense(1))
-        model.compile(loss='mean_squared_error', optimizer='adam')
+        model.compile(loss='mse', optimizer='adam')
         model.fit(trainX, trainY, epochs=self.epochs,
                   batch_size=self.batch_size, verbose=0)
 

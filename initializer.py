@@ -14,4 +14,4 @@ if __name__ == '__main__':
     weekly = False
     df = data_prep(weekly=weekly)
     # sequential_intitializer(df)
-    create_lstms(df, epochs=1200, batch_size=8, look_back=10)
+    create_lstms(df, epochs=500, batch_size=16, look_back=10)
