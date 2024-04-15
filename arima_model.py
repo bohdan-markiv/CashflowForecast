@@ -64,7 +64,7 @@ class custom_ARIMA:
                 history_test.append(obs)
         except Exception as e:
             print(
-                f"for this company operation was not successfull - {self.name }")
+                f"for this company operation was not successfull - {self.name}")
             raise Exception
 
         self.mse = mean_squared_error(
@@ -246,3 +246,8 @@ my_arima.initialize_model()
 my_arima.get_rmse()
 my_arima.create_the_full_graph(save=True)
 """
+weekly = False
+data = data_prep(weekly=weekly)
+data = data[54468226]["Operational Revenue"]
+my_arima = custom_ARIMA(2, 2, 2, data, 54468226, "Operational Revenue")
+my_arima.initialize_model()
