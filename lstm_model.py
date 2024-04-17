@@ -86,7 +86,7 @@ class custom_LSTM():
         plt.plot(trainPredictPlot,
                  label='Predicted', marker='x')
         plt.plot(testPredictPlot, linestyle='--',
-                 label='Test Predictions', marker='x')
+                 label='Test Predictions', marker='x', color="red")
         plt.title('Actual vs Predicted')
         plt.xlabel('Time')
         plt.ylabel('Net Cashflow')

@@ -1,6 +1,7 @@
 import pandas as pd
 import warnings
 import os
+import pmdarima as pm
 from matplotlib import pyplot
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -13,27 +14,11 @@ warnings.filterwarnings(
 
 
 class custom_ARIMA:
-    def __init__(self, p, d, q, data, name, type):
-        self.p = p
-        self.d = d
-        self.q = q
+    def __init__(self, data, name, type):
         self.data = data
         self.test = ""
         self.name = name
         self.type = type
-
-    def check_residuals(self):
-
-        model = ARIMA(self.data, order=(self.p, self.d, self.q))
-        model_fit = model.fit()
-        model_fit.summary()
-        residuals = pd.DataFrame(model_fit.resid)
-
-        residuals.plot()
-        pyplot.show()
-
-        residuals.plot(kind='kde')
-        pyplot.show()
 
     def initialize_model(self):
         self.X = self.data.values
@@ -43,11 +28,14 @@ class custom_ARIMA:
         history_test = [x for x in self.train]
         self.train_predictions = []
         self.test_predictions = []
+
         try:
             for t in range(len(self.train)):
-                model = ARIMA(history_train, order=(self.p, self.d, self.q))
-                model_fit = model.fit()
-                output = model_fit.forecast()
+                model = pm.auto_arima(history_train,
+                                      start_P=0, start_Q=0,
+                                      max_P=10, max_Q=10, test="adf",
+                                      d=None, D=None, stepwise=True)
+                output = model.predict(n_periods=1)
                 yhat = output[0]
                 self.train_predictions.append(yhat)
                 obs = self.train[t]
@@ -55,9 +43,11 @@ class custom_ARIMA:
 
             # Add history of the entire training data for predicting the test
             for t in range(len(self.test)):
-                model = ARIMA(history_test, order=(self.p, self.d, self.q))
-                model_fit = model.fit()
-                output = model_fit.forecast()
+                model = pm.auto_arima(history_test,
+                                      start_P=0, start_Q=0,
+                                      max_P=10, max_Q=10, test="adf",
+                                      d=None, D=None)
+                output = model.predict(n_periods=1)
                 yhat = output[0]
                 self.test_predictions.append(yhat)
                 obs = self.test[t]
@@ -104,7 +94,7 @@ class custom_ARIMA:
             pyplot.close()
 
 
-def create_arimas(data, p, d, q):
+def create_arimas(data):
     output_table_rmse = pd.DataFrame({
         'COGS': [],
         'Operational Revenue': [],
@@ -157,7 +147,7 @@ def create_arimas(data, p, d, q):
                     except KeyError as error:
                         print(
                             f"Missing columns for daily data processing: {error}")
-                my_arima = custom_ARIMA(p, d, q, df, company, type)
+                my_arima = custom_ARIMA(df, company, type)
                 try:
                     my_arima.initialize_model()
                     my_arima.create_the_full_graph(save=True)
@@ -246,8 +236,3 @@ my_arima.initialize_model()
 my_arima.get_rmse()
 my_arima.create_the_full_graph(save=True)
 """
-weekly = False
-data = data_prep(weekly=weekly)
-data = data[54468226]["Operational Revenue"]
-my_arima = custom_ARIMA(2, 2, 2, data, 54468226, "Operational Revenue")
-my_arima.initialize_model()
