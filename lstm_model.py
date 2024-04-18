@@ -23,7 +23,7 @@ class custom_LSTM():
 
     def create_dataset(self, dataset):
         dataX, dataY = [], []
-        for i in range(len(dataset)-self.look_back-1):
+        for i in range(len(dataset)-self.look_back):
             a = dataset[i:(i+self.look_back), 0]
             dataX.append(a)
             dataY.append(dataset[i + self.look_back, 0])
@@ -78,7 +78,7 @@ class custom_LSTM():
         testPredictPlot = np.empty_like(self.df)
         testPredictPlot[:, :] = np.nan
         testPredictPlot[len(self.trainPredict) +
-                        (self.look_back*2)+1:len(self.df)-1, :] = self.testPredict
+                        (self.look_back*2):len(self.df), :] = self.testPredict
         # plot baseline and predictions
         plt.figure(figsize=(12, 6))
         plt.plot(self.scaler.inverse_transform(

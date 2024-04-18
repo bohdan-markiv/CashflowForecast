@@ -1,5 +1,6 @@
 import pandas as pd
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 # Load the data
 data = pd.read_excel("output_tables/lstm/mse.xlsx")
 
@@ -53,6 +54,25 @@ def prep_df(df):
     return df_long
 
 
-rmse_all_errors = prep_df(rmse_all_errors)
-mse_all_errors = prep_df(mse_all_errors)
-mae_all_errors = prep_df(mae_all_errors)
+rmse_all_errors = prep_df(rmse_all_errors).dropna(subset=["Company_ID"])
+mse_all_errors = prep_df(mse_all_errors).dropna(subset=["Company_ID"])
+mae_all_errors = prep_df(mae_all_errors).dropna(subset=["Company_ID"])
+
+rmse_agg = rmse_all_errors.groupby(["Category", "Model"])[
+    "Value"].mean().reset_index()
+
+rmse_all_errors[(rmse_all_errors["Model"] == "arima")
+                & (rmse_all_errors["Value"] <= 40000)]
+
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Category', y='Value', data=rmse_all_errors[(
+    rmse_all_errors["Model"] == "arima") & (rmse_all_errors["Value"] <= 40000)])
+
+# Adding titles and labels
+plt.title('Box Plot of Values by Category')
+plt.xlabel('Category')
+plt.ylabel('Value')
+
+# Show the plot
+plt.show()

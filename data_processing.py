@@ -16,7 +16,7 @@ def data_prep(weekly=False):
 
     output_list = {}
 
-    data = anonymyse_ids(pd.read_csv("grouped_data.csv"), "company_id")
+    data = anonymyse_ids(pd.read_csv("data/grouped_data.csv"), "company_id")
 
     data = data[data["effective_date"] <= '2023-12-31']
 
