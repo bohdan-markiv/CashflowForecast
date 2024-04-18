@@ -63,16 +63,54 @@ rmse_agg = rmse_all_errors.groupby(["Category", "Model"])[
 
 rmse_all_errors[(rmse_all_errors["Model"] == "arima")
                 & (rmse_all_errors["Value"] <= 40000)]
-
+filtered_df = rmse_all_errors[(rmse_all_errors["Value"] <= 40000)]
 
 plt.figure(figsize=(12, 6))
-sns.boxplot(x='Category', y='Value', data=rmse_all_errors[(
-    rmse_all_errors["Model"] == "arima") & (rmse_all_errors["Value"] <= 40000)])
-
+sns.boxplot(x='Category', y='Value', hue='Model', data=filtered_df)
 # Adding titles and labels
-plt.title('Box Plot of Values by Category')
+plt.title('Box Plot of Values by Category for Different Models')
 plt.xlabel('Category')
 plt.ylabel('Value')
+plt.legend()
+# Show the plot
+plt.show()
 
+# ARIMA
+filtered_df_arima = rmse_all_errors[(rmse_all_errors["Model"] == "arima") & (
+    rmse_all_errors["Value"] <= 40000)]
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Category', y='Value', data=filtered_df_arima)
+# Adding titles and labels
+plt.title('Box Plot of Values For ARIMA')
+plt.xlabel('Category')
+plt.ylabel('Value')
+plt.legend()
+# Show the plot
+plt.show()
+
+filtered_df_random_forest = rmse_all_errors[(
+    rmse_all_errors["Model"] == "random forest") & (rmse_all_errors["Value"] <= 40000)]
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Category', y='Value', data=filtered_df_random_forest)
+# Adding titles and labels
+plt.title('Box Plot of Values For Random Forest')
+plt.xlabel('Category')
+plt.ylabel('Value')
+plt.legend()
+# Show the plot
+plt.show()
+
+filtered_df_lstm = rmse_all_errors[(rmse_all_errors["Model"] == "lstm") & (
+    rmse_all_errors["Value"] <= 40000)]
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Category', y='Value', data=filtered_df_lstm)
+# Adding titles and labels
+plt.title('Box Plot of Values For LSTM')
+plt.xlabel('Category')
+plt.ylabel('Value')
+plt.legend()
 # Show the plot
 plt.show()
