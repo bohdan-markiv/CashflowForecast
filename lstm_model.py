@@ -7,7 +7,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from data_processing import data_prep
 
 
@@ -62,11 +62,12 @@ class custom_LSTM():
         self.trainPredict = self.scaler.inverse_transform(self.trainPredict)
         trainY = self.scaler.inverse_transform([trainY])
         self.testPredict = self.scaler.inverse_transform(self.testPredict)
-        testY = self.scaler.inverse_transform([testY])
+        self.testY = self.scaler.inverse_transform([testY])
 # calculate root mean squared error
-        self.mse = mean_squared_error(testY[0], self.testPredict[:, 0])
+        self.mse = mean_squared_error(self.testY[0], self.testPredict[:, 0])
         self.rmse = np.sqrt(self.mse)
-        self.mae = mean_absolute_error(testY[0], self.testPredict[:, 0])
+        self.mae = mean_absolute_error(self.testY[0], self.testPredict[:, 0])
+        self.r2 = r2_score(self.testY[0], self.testPredict[:, 0])
 
     def create_plot(self):
 
@@ -126,6 +127,13 @@ def create_lstms(data, epochs, batch_size, look_back):
         'Other Operating Costs': [],
         'Organizational Costs': []
     })
+    output_table_r2 = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
 
     i = 1
     for company in data.keys():
@@ -163,6 +171,8 @@ def create_lstms(data, epochs, batch_size, look_back):
 
                 my_lstm.initialize_model()
                 my_lstm.create_plot()
+                print(
+                    f"Company - {company}, type - {type}, rmse - {my_lstm.rmse}")
                 if company in output_table_rmse.index:
                     output_table_rmse.at[company, type] = my_lstm.rmse
                 else:
@@ -176,9 +186,15 @@ def create_lstms(data, epochs, batch_size, look_back):
                     output_table_mae.at[company, type] = my_lstm.mae
                 else:
                     output_table_mae.loc[company, type] = my_lstm.mae
+                if company in output_table_r2.index:
+                    output_table_r2.at[company, type] = my_lstm.r2
+                else:
+                    output_table_r2.loc[company, type] = my_lstm.r2
+
     output_table_rmse.to_excel("output_tables/lstm/rmse.xlsx")
     output_table_mse.to_excel("output_tables/lstm/mse.xlsx")
     output_table_mae.to_excel("output_tables/lstm/mae.xlsx")
+    output_table_r2.to_excel("output_tables/lstm/r2.xlsx")
 
 
 # create_lstms(df, 1200, 7, 4)

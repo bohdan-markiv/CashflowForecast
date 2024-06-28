@@ -4,7 +4,7 @@ from numpy import asarray
 from pandas import read_csv
 from pandas import DataFrame
 from pandas import concat
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 from math import sqrt
@@ -141,6 +141,7 @@ class custom_RandomForest:
         self.mse = mean_squared_error(testy, self.predictions_test)
         self.rmse = sqrt(self.mse)
         self.mae = mean_absolute_error(testy, self.predictions_test)
+        self.r2 = r2_score(testy, self.predictions_test)
 
     def create_plot(self):
         # Plotting
@@ -181,6 +182,13 @@ def create_random_forests(data, n_estimators, n_lags):
         'Organizational Costs': []
     })
     output_table_mae = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_r2 = pd.DataFrame({
         'COGS': [],
         'Operational Revenue': [],
         'Other Revenue': [],
@@ -237,9 +245,15 @@ def create_random_forests(data, n_estimators, n_lags):
                     output_table_mae.at[company, type] = my_random_forest.mae
                 else:
                     output_table_mae.loc[company, type] = my_random_forest.mae
+                if company in output_table_r2.index:
+                    output_table_r2.at[company, type] = my_random_forest.r2
+                else:
+                    output_table_r2.loc[company, type] = my_random_forest.r2
+
     output_table_rmse.to_excel("output_tables/random_forest/rmse.xlsx")
     output_table_mse.to_excel("output_tables/random_forest/mse.xlsx")
     output_table_mae.to_excel("output_tables/random_forest/mae.xlsx")
+    output_table_r2.to_excel("output_tables/random_forest/r2.xlsx")
 
 
 """

@@ -1,67 +1,62 @@
 import pandas as pd
 import warnings
 import os
+import pmdarima as pm
 from matplotlib import pyplot
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_predict
 from math import sqrt
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from data_processing import data_prep
 warnings.filterwarnings(
     "ignore", message="Maximum Likelihood optimization failed to converge.*")
 
 
 class custom_ARIMA:
-    def __init__(self, p, d, q, data, name, type):
-        self.p = p
-        self.d = d
-        self.q = q
+    def __init__(self, data, name, type):
+
         self.data = data
         self.test = ""
         self.name = name
         self.type = type
 
-    def check_residuals(self):
+    # def check_residuals(self):
 
-        model = ARIMA(self.data, order=(self.p, self.d, self.q))
-        model_fit = model.fit()
-        model_fit.summary()
-        residuals = pd.DataFrame(model_fit.resid)
+    #     model = ARIMA(self.data, order=(self.p, self.d, self.q))
+    #     model_fit = model.fit()
+    #     model_fit.summary()
+    #     residuals = pd.DataFrame(model_fit.resid)
 
-        residuals.plot()
-        pyplot.show()
+    #     residuals.plot()
+    #     pyplot.show()
 
-        residuals.plot(kind='kde')
-        pyplot.show()
+    #     residuals.plot(kind='kde')
+    #     pyplot.show()
 
     def initialize_model(self):
-        self.X = self.data.values
-        size = int(len(self.X) * 0.7)
-        self.train, self.test = self.X[0:size], self.X[size:len(self.X)]
-        history_train = [x for x in self.train]
-        history_test = [x for x in self.train]
-        self.train_predictions = []
-        self.test_predictions = []
-        try:
-            for t in range(len(self.train)):
-                model = ARIMA(history_train, order=(self.p, self.d, self.q))
-                model_fit = model.fit()
-                output = model_fit.forecast()
-                yhat = output[0]
-                self.train_predictions.append(yhat)
-                obs = self.train[t]
-                history_train.append(obs)  # only train data used here
+        self.X = self.data
+        self.size = int(len(self.X) * 0.7)
+        self.train, self.test = self.X[0:self.size], self.X[self.size:len(
+            self.X)]
 
-            # Add history of the entire training data for predicting the test
-            for t in range(len(self.test)):
-                model = ARIMA(history_test, order=(self.p, self.d, self.q))
-                model_fit = model.fit()
-                output = model_fit.forecast()
-                yhat = output[0]
-                self.test_predictions.append(yhat)
-                obs = self.test[t]
-                history_test.append(obs)
+        try:
+            order = pm.auto_arima(self.train,
+                                  start_p=0, start_q=0,
+                                  max_p=12, max_q=12,  # maximum p and q
+                                  test='adf',                # frequency of series
+                                  d=None,             # let model determine 'd'
+                                  D=None,             # let model determine 'D'
+                                  trace=False,
+                                  error_action='ignore',
+                                  suppress_warnings=True,
+                                  stepwise=True).order
+            model = ARIMA(self.train, order=order)
+            self.model_fit = model.fit()
+            self.test_predictions = self.model_fit.predict(
+                start=self.size, end=len(self.X)-1, dynamic=True)
+
         except Exception as e:
             print(
                 f"for this company operation was not successfull - {self.name}")
@@ -71,6 +66,7 @@ class custom_ARIMA:
             self.test, self.test_predictions)
         self.rmse = sqrt(self.mse)
         self.mae = mean_absolute_error(self.test, self.test_predictions)
+        self.r2 = r2_score(self.test, self.test_predictions)
 
     def get_rmse(self):
         if isinstance(self.test, str):
@@ -84,13 +80,13 @@ class custom_ARIMA:
             print("Do the initialisation first.")
 
         else:
-            pyplot.figure(figsize=[15, 5])
-            pyplot.plot(self.X, label='Actual')
-            pyplot.plot(self.train_predictions, color='orange',
-                        linestyle='--', label='Train Predictions')
-            pyplot.plot(range(len(self.train), len(self.train) + len(self.test_predictions)),
-                        self.test_predictions, color='red', linestyle='--', label='Test Predictions')
-            pyplot.legend()
+            fig, ax = pyplot.subplots()
+            ax = self.X.plot(ax=ax)
+            plot_predict(self.model_fit, start=len(self.train), end=len(
+                self.data)-1, ax=ax, dynamic=False)
+
+            # Optional: Customize the legend to include all labels
+            ax.legend()
             if save:
                 MYDIR = (f"graphs/arima/{self.name}")
                 CHECK_FOLDER = os.path.isdir(MYDIR)
@@ -104,7 +100,7 @@ class custom_ARIMA:
             pyplot.close()
 
 
-def create_arimas(data, p, d, q):
+def create_arimas(data):
     output_table_rmse = pd.DataFrame({
         'COGS': [],
         'Operational Revenue': [],
@@ -120,6 +116,13 @@ def create_arimas(data, p, d, q):
         'Organizational Costs': []
     })
     output_table_mae = pd.DataFrame({
+        'COGS': [],
+        'Operational Revenue': [],
+        'Other Revenue': [],
+        'Other Operating Costs': [],
+        'Organizational Costs': []
+    })
+    output_table_r2 = pd.DataFrame({
         'COGS': [],
         'Operational Revenue': [],
         'Other Revenue': [],
@@ -157,7 +160,7 @@ def create_arimas(data, p, d, q):
                     except KeyError as error:
                         print(
                             f"Missing columns for daily data processing: {error}")
-                my_arima = custom_ARIMA(p, d, q, df, company, type)
+                my_arima = custom_ARIMA(df, company, type)
                 try:
                     my_arima.initialize_model()
                     my_arima.create_the_full_graph(save=True)
@@ -173,12 +176,17 @@ def create_arimas(data, p, d, q):
                         output_table_mae.at[company, type] = my_arima.mae
                     else:
                         output_table_mae.loc[company, type] = my_arima.mae
+                    if company in output_table_r2.index:
+                        output_table_r2.at[company, type] = my_arima.r2
+                    else:
+                        output_table_r2.loc[company, type] = my_arima.r2
                 except Exception:
                     continue
 
     output_table_rmse.to_excel("output_tables/arima/rmse.xlsx")
     output_table_mse.to_excel("output_tables/arima/mse.xlsx")
     output_table_mae.to_excel("output_tables/arima/mae.xlsx")
+    output_table_r2.to_excel("output_tables/arima/r2.xlsx")
 
 
 """

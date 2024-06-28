@@ -5,10 +5,13 @@ from lstm_model import custom_LSTM, create_lstms
 import pandas as pd
 from matplotlib import pyplot
 import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
+# 54468226 -COGS
 weekly = False
 data = data_prep(weekly=weekly)
-df = data[54468226]["COGS"]
+origin = data[5616614]["Operational Revenue"]
+df = origin.copy()
 try:
     # Check if 'week', 'year', and 'amount' are in the columns
     if all(col in df.columns for col in ['week', 'year', 'amount']):
@@ -35,9 +38,8 @@ except KeyError as e:  # Catching if columns are missing
         print(
             f"Missing columns for daily data processing: {error}")
 
-my_arima = custom_ARIMA(1, 2, 1, data=df, name=54468226, type="COGS")
+my_arima = custom_ARIMA(data=df, name=54468226, type="COGS")
 my_arima.initialize_model()
-my_arima.create_the_full_graph()
 len(my_arima.test_predictions)
 my_rf = custom_RandomForest(df, 54468226, "COGS", n_lags=10)
 my_rf.initialize_model()
@@ -46,10 +48,18 @@ len(my_rf.predictions_test)
 my_lstm = custom_LSTM(df, 54468226, "COGS", epochs=200,
                       batch_size=8, look_back=10, save=False)
 my_lstm.initialize_model()
-len(my_lstm.testPredict)
 
-data_block = data[54468226]["COGS"]
-data_block_test = data_block[109:]
+
+my_rf.r2
+r2_score(my_arima.test, my_arima.test_predictions)
+r2_score(my_lstm.testY[0], my_lstm.testPredict[:, 0])
+print(
+    f"ARIMA {-1 * r2_score(my_arima.test, my_arima.test_predictions)}, LSTM {-1 * r2_score(my_lstm.testY[0], my_lstm.testPredict[:, 0])}")
+
+data_block = origin.reset_index().drop(
+    columns=["index", "Unnamed: 0"])
+size = int(0.7 * len(data_block))
+data_block_test = data_block[size:]
 data_block_test["month"] = data_block_test["effective_date"].apply(
     lambda x: x.month)
 data_block_test["arima_pred"] = my_arima.test_predictions
